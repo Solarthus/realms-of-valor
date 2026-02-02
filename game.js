@@ -1,3 +1,5 @@
+console.log("Game.js has started loading...");
+
 // --- GAME CONFIG & DATA ---
 const WEAPONS = [
   { id: 'fists', name: 'Unarmed', power: 1, cost: 0 },
@@ -93,39 +95,7 @@ function addLog(msg) {
     render();
 }
 
-window.addEventListener('firebase-ready', () => {
-    const { onAuthStateChanged, onSnapshot, doc, setDoc } = window.FB;
-    
-    onAuthStateChanged(window.auth, (u) => {
-        state.user = u;
-        if (!u) {
-            updateState({ screen: 'auth', loading: false });
-        } else {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'users', u.uid, 'profile');
-            onSnapshot(docRef, (snap) => {
-                if (snap.exists()) {
-                    state.player = snap.data();
-                    if(state.screen === 'loading' || state.screen === 'auth') {
-                        state.screen = 'home';
-                    }
-                    updateState({ loading: false });
-                    
-                    if(!window.regenInterval) {
-                        window.regenInterval = setInterval(() => {
-                            if(state.player && state.player.energy < state.player.maxEnergy) {
-                                const newEnergy = state.player.energy + 1;
-                                setDoc(docRef, { energy: newEnergy }, { merge: true });
-                            }
-                        }, 10000);
-                    }
-                } else {
-                    updateState({ player: null, screen: 'auth' });
-                }
-            });
-        }
-    });
-});
-
+// --- DEFINE ACTIONS GLOBALLY ---
 window.actions = {
     setAuthMode: (isReg) => {
         state.authForm.isRegistering = isReg;
@@ -135,6 +105,13 @@ window.actions = {
     
     handleLogin: async (e) => {
         e.preventDefault();
+        console.log("Login submitted. Mode:", state.authForm.isRegistering ? "Register" : "Login");
+
+        if(!window.FB) {
+            alert("Error: Firebase not loaded yet. Check your connection.");
+            return;
+        }
+
         const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc, doc } = window.FB;
         const form = document.getElementById('authForm');
         const email = form.email.value;
@@ -144,8 +121,11 @@ window.actions = {
             if (state.authForm.isRegistering) {
                 const name = form.charName.value;
                 const gender = form.gender.value;
-                const cred = await createUserWithEmailAndPassword(window.auth, email, password);
+                console.log("Attempting to create user...");
                 
+                const cred = await createUserWithEmailAndPassword(window.auth, email, password);
+                console.log("User created:", cred.user.uid);
+
                 const initialProfile = {
                     name: name,
                     gender: gender,
@@ -159,18 +139,22 @@ window.actions = {
                 };
                 
                 await setDoc(doc(window.db, 'artifacts', window.appId, 'users', cred.user.uid, 'profile'), initialProfile);
+                console.log("Profile created!");
             } else {
+                console.log("Attempting login...");
                 await signInWithEmailAndPassword(window.auth, email, password);
+                console.log("Login successful!");
             }
         } catch (err) {
+            console.error("Auth Error:", err);
+            // Alert the error so you can see it without console
+            alert("Login Failed: " + err.message);
             state.authForm.error = err.message;
             render();
         }
     },
 
-    navigate: (screen) => {
-        updateState({ screen });
-    },
+    navigate: (screen) => { updateState({ screen }); },
 
     enterZone: (zoneId) => {
         const zone = ZONES.find(z => z.id === zoneId);
@@ -308,16 +292,52 @@ window.actions = {
     }
 };
 
+// --- FIREBASE LISTENERS ---
+window.addEventListener('firebase-ready', () => {
+    console.log("Firebase is ready in game.js");
+    const { onAuthStateChanged, onSnapshot, doc, setDoc } = window.FB;
+    
+    onAuthStateChanged(window.auth, (u) => {
+        state.user = u;
+        if (!u) {
+            updateState({ screen: 'auth', loading: false });
+        } else {
+            console.log("User logged in:", u.uid);
+            const docRef = doc(window.db, 'artifacts', window.appId, 'users', u.uid, 'profile');
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    state.player = snap.data();
+                    if(state.screen === 'loading' || state.screen === 'auth') {
+                        state.screen = 'home';
+                    }
+                    updateState({ loading: false });
+                    
+                    if(!window.regenInterval) {
+                        window.regenInterval = setInterval(() => {
+                            if(state.player && state.player.energy < state.player.maxEnergy) {
+                                const newEnergy = state.player.energy + 1;
+                                setDoc(docRef, { energy: newEnergy }, { merge: true });
+                            }
+                        }, 10000);
+                    }
+                } else {
+                    console.log("User exists, but profile not found.");
+                    updateState({ player: null, screen: 'auth' });
+                }
+            });
+        }
+    });
+});
+
+// --- RENDER ---
 function render() {
     const app = document.getElementById('app');
     
-    // --- LOADING ---
     if (state.screen === 'loading') {
         app.innerHTML = `<div class="loading-screen"><div class="loading-text">Forging Realm...</div></div>`;
         return;
     }
 
-    // --- AUTH ---
     if (state.screen === 'auth') {
         app.innerHTML = `
         <div class="auth-container">
@@ -550,4 +570,5 @@ function render() {
     if(window.lucide) window.lucide.createIcons();
 }
 
+console.log("Game.js loaded. Initializing render...");
 render();
