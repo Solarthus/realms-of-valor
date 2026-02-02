@@ -95,6 +95,13 @@ function addLog(msg) {
     render();
 }
 
+// --- HELPER: GET PLAYER REF ---
+function getPlayerRef(uid) {
+    const { doc } = window.FB;
+    // FIXED: Removed 'profile' from the end. Now it is an even 4 segments.
+    return doc(window.db, 'artifacts', window.appId, 'users', uid);
+}
+
 // --- DEFINE ACTIONS GLOBALLY ---
 window.actions = {
     setAuthMode: (isReg) => {
@@ -112,7 +119,7 @@ window.actions = {
             return;
         }
 
-        const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc, doc } = window.FB;
+        const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc } = window.FB;
         const form = document.getElementById('authForm');
         const email = form.email.value;
         const password = form.password.value;
@@ -138,7 +145,8 @@ window.actions = {
                     wins: 0, losses: 0
                 };
                 
-                await setDoc(doc(window.db, 'artifacts', window.appId, 'users', cred.user.uid, 'profile'), initialProfile);
+                // FIXED: Using helper with correct path
+                await setDoc(getPlayerRef(cred.user.uid), initialProfile);
                 console.log("Profile created!");
             } else {
                 console.log("Attempting login...");
@@ -147,7 +155,6 @@ window.actions = {
             }
         } catch (err) {
             console.error("Auth Error:", err);
-            // Alert the error so you can see it without console
             alert("Login Failed: " + err.message);
             state.authForm.error = err.message;
             render();
@@ -169,8 +176,9 @@ window.actions = {
         const enemyTemplate = state.selectedZone.enemies[enemyIdx];
         if (state.player.energy < 3) { alert("You are too exhausted (Low Energy)."); return; }
         
-        const { doc, setDoc } = window.FB;
-        const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+        const { setDoc } = window.FB;
+        // FIXED: Using helper
+        const playerRef = getPlayerRef(state.user.uid);
         setDoc(playerRef, { energy: state.player.energy - 3 }, { merge: true });
 
         updateState({
@@ -205,8 +213,9 @@ window.actions = {
         log.unshift(`You struck the ${enemy.name} for ${pDmg}.`);
 
         if (enemy.hp <= 0) {
-            const { doc, setDoc } = window.FB;
-            const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+            const { setDoc } = window.FB;
+            // FIXED: Using helper
+            const playerRef = getPlayerRef(state.user.uid);
             
             let newExp = player.exp + enemy.exp;
             let newLevel = player.level;
@@ -237,8 +246,9 @@ window.actions = {
         log.unshift(`The ${enemy.name} attacks you for ${eDmg}.`);
 
         if (newHp <= 0) {
-            const { doc, setDoc } = window.FB;
-            const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+            const { setDoc } = window.FB;
+            // FIXED: Using helper
+            const playerRef = getPlayerRef(state.user.uid);
             await setDoc(playerRef, { hp: 0, losses: player.losses + 1 }, { merge: true });
             
             addLog("You have fallen in battle.");
@@ -246,8 +256,9 @@ window.actions = {
             return;
         }
 
-        const { doc, setDoc } = window.FB;
-        const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+        const { setDoc } = window.FB;
+        // FIXED: Using helper
+        const playerRef = getPlayerRef(state.user.uid);
         setDoc(playerRef, { hp: newHp }, { merge: true });
 
         updateState({
@@ -263,8 +274,9 @@ window.actions = {
         const cost = state.player.maxHp - state.player.hp;
         if(state.player.gold < cost) return;
         
-        const { doc, setDoc } = window.FB;
-        const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+        const { setDoc } = window.FB;
+        // FIXED: Using helper
+        const playerRef = getPlayerRef(state.user.uid);
         await setDoc(playerRef, { hp: state.player.maxHp, gold: state.player.gold - cost }, { merge: true });
     },
     
@@ -275,8 +287,9 @@ window.actions = {
         
         if (player.gold < item.cost) { alert("Not enough gold."); return; }
         
-        const { doc, setDoc } = window.FB;
-        const playerRef = doc(window.db, 'artifacts', window.appId, 'users', state.user.uid, 'profile');
+        const { setDoc } = window.FB;
+        // FIXED: Using helper
+        const playerRef = getPlayerRef(state.user.uid);
         
         const updates = { gold: player.gold - item.cost };
         if (type === 'weapon') updates.weaponId = itemId;
@@ -295,7 +308,7 @@ window.actions = {
 // --- FIREBASE LISTENERS ---
 window.addEventListener('firebase-ready', () => {
     console.log("Firebase is ready in game.js");
-    const { onAuthStateChanged, onSnapshot, doc, setDoc } = window.FB;
+    const { onAuthStateChanged, onSnapshot, setDoc } = window.FB;
     
     onAuthStateChanged(window.auth, (u) => {
         state.user = u;
@@ -303,7 +316,8 @@ window.addEventListener('firebase-ready', () => {
             updateState({ screen: 'auth', loading: false });
         } else {
             console.log("User logged in:", u.uid);
-            const docRef = doc(window.db, 'artifacts', window.appId, 'users', u.uid, 'profile');
+            // FIXED: Using helper
+            const docRef = getPlayerRef(u.uid);
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
                     state.player = snap.data();
