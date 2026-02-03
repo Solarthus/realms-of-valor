@@ -98,7 +98,6 @@ function addLog(msg) {
 // --- HELPER: GET PLAYER REF ---
 function getPlayerRef(uid) {
     const { doc } = window.FB;
-    // FIXED: Removed 'profile' from the end. Now it is an even 4 segments.
     return doc(window.db, 'artifacts', window.appId, 'users', uid);
 }
 
@@ -109,29 +108,30 @@ window.actions = {
         state.authForm.error = '';
         render();
     },
+
+    // NEW: Keep track of inputs so they don't vanish
+    updateInput: (field, value) => {
+        state.authForm[field] = value;
+    },
     
     handleLogin: async (e) => {
         e.preventDefault();
-        console.log("Login submitted. Mode:", state.authForm.isRegistering ? "Register" : "Login");
-
+        
         if(!window.FB) {
             alert("Error: Firebase not loaded yet. Check your connection.");
             return;
         }
 
         const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc } = window.FB;
-        const form = document.getElementById('authForm');
-        const email = form.email.value;
-        const password = form.password.value;
+        const email = state.authForm.email;
+        const password = state.authForm.password;
         
         try {
             if (state.authForm.isRegistering) {
-                const name = form.charName.value;
-                const gender = form.gender.value;
-                console.log("Attempting to create user...");
+                const name = state.authForm.name;
+                const gender = document.getElementById('genderSelect').value;
                 
                 const cred = await createUserWithEmailAndPassword(window.auth, email, password);
-                console.log("User created:", cred.user.uid);
 
                 const initialProfile = {
                     name: name,
@@ -145,17 +145,12 @@ window.actions = {
                     wins: 0, losses: 0
                 };
                 
-                // FIXED: Using helper with correct path
                 await setDoc(getPlayerRef(cred.user.uid), initialProfile);
-                console.log("Profile created!");
             } else {
-                console.log("Attempting login...");
                 await signInWithEmailAndPassword(window.auth, email, password);
-                console.log("Login successful!");
             }
         } catch (err) {
             console.error("Auth Error:", err);
-            alert("Login Failed: " + err.message);
             state.authForm.error = err.message;
             render();
         }
@@ -177,7 +172,6 @@ window.actions = {
         if (state.player.energy < 3) { alert("You are too exhausted (Low Energy)."); return; }
         
         const { setDoc } = window.FB;
-        // FIXED: Using helper
         const playerRef = getPlayerRef(state.user.uid);
         setDoc(playerRef, { energy: state.player.energy - 3 }, { merge: true });
 
@@ -214,7 +208,6 @@ window.actions = {
 
         if (enemy.hp <= 0) {
             const { setDoc } = window.FB;
-            // FIXED: Using helper
             const playerRef = getPlayerRef(state.user.uid);
             
             let newExp = player.exp + enemy.exp;
@@ -247,7 +240,6 @@ window.actions = {
 
         if (newHp <= 0) {
             const { setDoc } = window.FB;
-            // FIXED: Using helper
             const playerRef = getPlayerRef(state.user.uid);
             await setDoc(playerRef, { hp: 0, losses: player.losses + 1 }, { merge: true });
             
@@ -257,7 +249,6 @@ window.actions = {
         }
 
         const { setDoc } = window.FB;
-        // FIXED: Using helper
         const playerRef = getPlayerRef(state.user.uid);
         setDoc(playerRef, { hp: newHp }, { merge: true });
 
@@ -275,7 +266,6 @@ window.actions = {
         if(state.player.gold < cost) return;
         
         const { setDoc } = window.FB;
-        // FIXED: Using helper
         const playerRef = getPlayerRef(state.user.uid);
         await setDoc(playerRef, { hp: state.player.maxHp, gold: state.player.gold - cost }, { merge: true });
     },
@@ -288,7 +278,6 @@ window.actions = {
         if (player.gold < item.cost) { alert("Not enough gold."); return; }
         
         const { setDoc } = window.FB;
-        // FIXED: Using helper
         const playerRef = getPlayerRef(state.user.uid);
         
         const updates = { gold: player.gold - item.cost };
@@ -308,7 +297,7 @@ window.actions = {
 // --- FIREBASE LISTENERS ---
 window.addEventListener('firebase-ready', () => {
     console.log("Firebase is ready in game.js");
-    const { onAuthStateChanged, onSnapshot, setDoc } = window.FB;
+    const { onAuthStateChanged, onSnapshot, setDoc, signOut } = window.FB;
     
     onAuthStateChanged(window.auth, (u) => {
         state.user = u;
@@ -316,7 +305,6 @@ window.addEventListener('firebase-ready', () => {
             updateState({ screen: 'auth', loading: false });
         } else {
             console.log("User logged in:", u.uid);
-            // FIXED: Using helper
             const docRef = getPlayerRef(u.uid);
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
@@ -335,7 +323,10 @@ window.addEventListener('firebase-ready', () => {
                         }, 10000);
                     }
                 } else {
+                    // --- ZOMBIE ACCOUNT FIX ---
                     console.log("User exists, but profile not found.");
+                    alert("Character data not found! Please register a new hero.");
+                    signOut(window.auth); // Log them out so they can try again
                     updateState({ player: null, screen: 'auth' });
                 }
             });
@@ -359,12 +350,21 @@ function render() {
                 <h1 style="margin-bottom:20px;">Realms of Valor</h1>
                 <form id="authForm" onsubmit="window.actions.handleLogin(event)">
                     ${state.authForm.error ? `<div style="color:red; margin-bottom:10px;">${state.authForm.error}</div>` : ''}
-                    <input name="email" type="email" placeholder="Email" required class="input-field">
-                    <input name="password" type="password" placeholder="Password" required class="input-field">
+                    
+                    <input type="email" placeholder="Email" required class="input-field" 
+                        value="${state.authForm.email || ''}"
+                        oninput="window.actions.updateInput('email', this.value)">
+                        
+                    <input type="password" placeholder="Password" required class="input-field"
+                        value="${state.authForm.password || ''}"
+                        oninput="window.actions.updateInput('password', this.value)">
                     
                     ${state.authForm.isRegistering ? `
-                        <input name="charName" type="text" placeholder="Hero Name" required class="input-field">
-                        <select name="gender" class="input-field">
+                        <input type="text" placeholder="Hero Name" required class="input-field"
+                            value="${state.authForm.name || ''}"
+                            oninput="window.actions.updateInput('name', this.value)">
+                            
+                        <select id="genderSelect" class="input-field">
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                         </select>
