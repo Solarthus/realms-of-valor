@@ -41,37 +41,13 @@ const AudioController = {
         const now = this.ctx.currentTime;
         
         if (type === 'click') {
-            osc.type = 'sine'; 
-            osc.frequency.setValueAtTime(800, now); 
-            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1); 
-            gain.gain.setValueAtTime(0.1, now); 
-            gain.gain.linearRampToValueAtTime(0, now + 0.1); 
-            osc.start(now); 
-            osc.stop(now + 0.1);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1);
         } else if (type === 'attack') {
-            osc.type = 'sawtooth'; 
-            osc.frequency.setValueAtTime(100, now); 
-            osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.15); 
-            gain.gain.setValueAtTime(0.2, now); 
-            gain.gain.linearRampToValueAtTime(0, now + 0.15); 
-            osc.start(now); 
-            osc.stop(now + 0.15);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.15); gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.15); osc.start(now); osc.stop(now + 0.15);
         } else if (type === 'gold') {
-            osc.type = 'triangle'; 
-            osc.frequency.setValueAtTime(1200, now); 
-            osc.frequency.linearRampToValueAtTime(1800, now + 0.1); 
-            gain.gain.setValueAtTime(0.1, now); 
-            gain.gain.linearRampToValueAtTime(0, now + 0.3); 
-            osc.start(now); 
-            osc.stop(now + 0.3);
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.linearRampToValueAtTime(1800, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
         } else if (type === 'level') {
-            osc.type = 'square'; 
-            osc.frequency.setValueAtTime(440, now); 
-            osc.frequency.linearRampToValueAtTime(880, now + 0.5); 
-            gain.gain.setValueAtTime(0.1, now); 
-            gain.gain.linearRampToValueAtTime(0, now + 0.5); 
-            osc.start(now); 
-            osc.stop(now + 0.5);
+            osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.5); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
         }
     },
 
@@ -85,7 +61,6 @@ const AudioController = {
         if (!this.musicOn) return;
         let themeType = 'peaceful';
         
-        // Zone Music Mapping
         const zone = state.selectedZone ? state.selectedZone.id : null;
         if (screen === 'zone' || screen === 'combat') {
             if (zone === 'fields' || zone === 'forest') themeType = 'nature';
@@ -109,12 +84,12 @@ const AudioController = {
         
         const scales = {
             peaceful: { notes: [261.63, 329.63, 392.00, 493.88], tempo: 600, type: 'sine', vol: 0.05 },
-            nature: { notes: [261.63, 293.66, 329.63, 392.00, 329.63, 293.66], tempo: 500, type: 'triangle', vol: 0.05 }, 
-            dungeon: { notes: [73.42, 0, 82.41, 0, 65.41, 0, 98.00], tempo: 800, type: 'square', vol: 0.03 }, 
-            windy: { notes: [440, 0, 493.88, 0, 523.25, 0], tempo: 1000, type: 'sine', vol: 0.02 }, 
-            ominous: { notes: [110, 116.54, 110, 103.83], tempo: 900, type: 'sawtooth', vol: 0.04 }, 
-            intense: { notes: [110, 110, 146.83, 110, 164.81, 155.56], tempo: 200, type: 'sawtooth', vol: 0.06 }, 
-            tavern: { notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63], tempo: 400, type: 'triangle', vol: 0.06 } 
+            nature: { notes: [261.63, 293.66, 329.63, 392.00, 329.63, 293.66], tempo: 500, type: 'triangle', vol: 0.05 },
+            dungeon: { notes: [73.42, 0, 82.41, 0, 65.41, 0, 98.00], tempo: 800, type: 'square', vol: 0.03 },
+            windy: { notes: [440, 0, 493.88, 0, 523.25, 0], tempo: 1000, type: 'sine', vol: 0.02 },
+            ominous: { notes: [110, 116.54, 110, 103.83], tempo: 900, type: 'sawtooth', vol: 0.04 },
+            intense: { notes: [110, 110, 146.83, 110, 164.81, 155.56], tempo: 200, type: 'sawtooth', vol: 0.06 },
+            tavern: { notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63], tempo: 400, type: 'triangle', vol: 0.06 }
         };
 
         const track = scales[theme] || scales.peaceful;
@@ -158,7 +133,6 @@ const ARMOR = [
   { id: 'dragon', name: 'Dragon Scale', defense: 90, cost: 100000 },
 ];
 
-// --- ZONES (FULL DATA: 10 Enemies per Zone) ---
 const ZONES = [
   { 
     id: 'fields', name: 'Green Fields', minLvl: 1, bg: '#ecfccb', 
@@ -327,7 +301,8 @@ const state = {
     inboxMessages: [],
     chatInput: '',
     mailTo: '',
-    mailBody: ''
+    mailBody: '',
+    shopType: 'weapon' // Ensure default exists
 };
 
 function updateState(updates) {
@@ -348,7 +323,7 @@ function getPlayerRef(uid) {
     return doc(window.db, 'artifacts', window.appId, 'users', uid);
 }
 
-// --- ACTIONS ---
+// --- GLOBAL ACTIONS ---
 window.actions = {
     toggleMusic: () => AudioController.toggleMusic(),
     setAuthMode: (isReg) => { AudioController.playSFX('click'); state.authForm.isRegistering = isReg; state.authForm.error = ''; render(); },
@@ -541,6 +516,9 @@ window.actions = {
     logout: () => { AudioController.stopMusic(); window.FB.signOut(window.auth); window.location.reload(); }
 };
 
+// --- SAFE STATE BINDING ---
+window.state = state;
+
 // --- FIREBASE LISTENERS ---
 window.addEventListener('firebase-ready', () => {
     const { onAuthStateChanged, onSnapshot, setDoc, signOut, collection } = window.FB;
@@ -580,44 +558,224 @@ function render() {
     const app = document.getElementById('app');
     if (state.screen === 'loading') { app.innerHTML = `<div class="loading-screen"><div class="loading-text">Forging Realm...</div></div>`; return; }
     if (state.screen === 'auth') {
-        app.innerHTML = `<div class="auth-container"><div class="auth-box"><h1 style="margin-bottom:20px;">Realms of Valor</h1><form id="authForm" onsubmit="window.actions.handleLogin(event)">${state.authForm.error ? `<div style="color:red; margin-bottom:10px;">${state.authForm.error}</div>` : ''}<input type="email" placeholder="Email" required class="input-field" value="${state.authForm.email || ''}" oninput="window.actions.updateInput('email', this.value)"><input type="password" placeholder="Password" required class="input-field" value="${state.authForm.password || ''}" oninput="window.actions.updateInput('password', this.value)">${state.authForm.isRegistering ? `<input type="text" placeholder="Hero Name" required class="input-field" value="${state.authForm.name || ''}" oninput="window.actions.updateInput('name', this.value)"><select id="genderSelect" class="input-field"><option value="male">Male</option><option value="female">Female</option></select>` : ''}<button type="submit" class="btn btn-primary btn-full">${state.authForm.isRegistering ? 'Create Hero' : 'Load Game'}</button></form><div style="margin-top:15px; font-size: 0.8rem; cursor:pointer;" onclick="window.actions.setAuthMode(!state.authForm.isRegistering)">${state.authForm.isRegistering ? 'Already have a hero? Login' : 'Need a hero? Register'}</div></div></div>`;
+        app.innerHTML = `
+        <div class="auth-container"><div class="auth-box"><h1 style="margin-bottom:20px;">Realms of Valor</h1>
+        <form id="authForm" onsubmit="window.actions.handleLogin(event)">
+            ${state.authForm.error ? `<div style="color:red; margin-bottom:10px;">${state.authForm.error}</div>` : ''}
+            <input type="email" placeholder="Email" required class="input-field" value="${state.authForm.email || ''}" oninput="window.actions.updateInput('email', this.value)">
+            <input type="password" placeholder="Password" required class="input-field" value="${state.authForm.password || ''}" oninput="window.actions.updateInput('password', this.value)">
+            ${state.authForm.isRegistering ? `<input type="text" placeholder="Hero Name" required class="input-field" value="${state.authForm.name || ''}" oninput="window.actions.updateInput('name', this.value)"><select id="genderSelect" class="input-field"><option value="male">Male</option><option value="female">Female</option></select>` : ''}
+            <button type="submit" class="btn btn-primary btn-full">${state.authForm.isRegistering ? 'Create Hero' : 'Load Game'}</button>
+        </form>
+        <div style="margin-top:15px; font-size: 0.8rem; cursor:pointer;" onclick="window.actions.setAuthMode(!state.authForm.isRegistering)">${state.authForm.isRegistering ? 'Already have a hero? Login' : 'Need a hero? Register'}</div></div></div>`;
         return;
     }
+    
     const player = state.player;
     if (!player) return;
 
-    // BACKGROUND COLOR CHANGE
-    let bgStyle = '';
+    let bgStyle = `background: #fcfbf7;`;
     if(state.selectedZone) bgStyle = `background: ${state.selectedZone.bg};`;
     else if(state.screen === 'combat' && state.combat.type === 'pve' && state.selectedZone) bgStyle = `background: ${state.selectedZone.bg};`;
     else if(state.screen === 'arena' || state.combat?.type === 'pvp') bgStyle = `background: #e5e7eb;`;
-    else bgStyle = `background: #fcfbf7;`;
 
     let contentHtml = '';
+
     if (state.screen === 'home') {
         const weaponName = WEAPONS.find(w => w.id === player.weaponId).name;
         const armorName = ARMOR.find(a => a.id === player.armorId).name;
-        contentHtml = `<div style="max-width: 600px; margin: 0 auto;"><div class="card text-center">${getCharacterHTML(player.gender, player.armorId, player.weaponId)}<h2 style="border:none;">${player.name}</h2><div class="sub-text">Level ${player.level} Ranger</div><div class="card" style="margin-top: 20px; text-align: left; background: #f5f5f4;"><div class="grid-2"><div><div class="sub-text">Strength</div> <b>${player.str}</b></div><div><div class="sub-text">Defense</div> <b>${player.def}</b></div><div><div class="sub-text">Health</div> <b style="color:var(--c-success)">${player.hp}/${player.maxHp}</b></div><div><div class="sub-text">Exp</div> <b style="color:var(--c-primary)">${player.exp}/${player.expToNext}</b></div><div style="grid-column: span 2; padding-top:10px; border-top:1px solid #d6d3d1;"><div class="sub-text">Equipment</div> <b>${weaponName}</b> & <b>${armorName}</b></div></div></div></div></div>`;
-    } else if (state.screen === 'map') {
-        contentHtml = `<h2>World Map</h2><div class="grid-list">` + ZONES.map(zone => { const locked = player.level < zone.minLvl; return `<div onclick="${locked ? '' : `window.actions.enterZone('${zone.id}')`}" class="card" style="cursor: ${locked ? 'default' : 'pointer'}; opacity: ${locked ? '0.6' : '1'}; display:flex; justify-content:space-between; align-items:center; background:${zone.bg};"><div><div style="font-weight:bold; font-size:1.1rem; color: ${locked ? '#a8a29e' : 'var(--c-text)'}">${zone.name}</div><div class="sub-text">Lvl ${zone.minLvl}+</div></div>${locked ? '<i data-lucide="lock" style="color:#d6d3d1"></i>' : '<i data-lucide="compass" style="color:var(--c-primary)"></i>'}</div>`; }).join('') + `</div>`;
-    } else if (state.screen === 'zone') {
-        contentHtml = `<div class="flex-between" style="margin-bottom: 20px;"><div><h2>${state.selectedZone.name}</h2><div class="sub-text">Enemies Ahead</div></div><button onclick="window.actions.navigate('map')" class="btn btn-secondary">Retreat</button></div><div class="grid-list">${state.selectedZone.enemies.map((e, idx) => `<div class="card flex-between"><div class="flex-center"><div style="width:30px; height:30px; background:#e5e5e5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:15px;">${e.level}</div><div><div style="font-weight:bold;">${e.name}</div><div class="sub-text">HP: ${e.hp}</div></div></div><button onclick="window.actions.startCombat(${idx})" class="btn btn-primary">Fight</button></div>`).join('')}</div>`;
-    } else if (state.screen === 'arena') {
-        contentHtml = `<div class="flex-between" style="margin-bottom: 20px;"><div><h2>Battle Arena</h2><div class="sub-text">Challenge other players</div></div><button onclick="window.actions.togglePvpStatus()" class="btn ${player.allowPvp ? 'btn-success' : 'btn-secondary'}">${player.allowPvp ? 'Challenges: ON' : 'Challenges: OFF'}</button></div><div class="grid-list">${state.arenaList.length === 0 ? '<div class="sub-text">No active players found nearby.</div>' : state.arenaList.map(p => `<div class="card flex-between" style="opacity: ${p.allowPvp ? 1 : 0.5}"><div><div style="font-weight:bold;">${p.name} <span class="sub-text">Lvl ${p.level}</span></div><div class="sub-text">${p.allowPvp ? 'Ready to fight' : 'Peaceful'}</div></div>${p.allowPvp ? `<button onclick="window.actions.challengePlayer('${p.uid}')" class="btn btn-danger">Duel (5 En)</button>` : '<span class="sub-text">Passive</span>'}</div>`).join('')}</div>`;
-    } else if (state.screen === 'tavern') {
-        contentHtml = `<div style="display:flex; flex-direction:column; height:100%;"><div style="margin-bottom:10px;"><h2>The Tavern</h2><div class="sub-text">Gather and chat</div></div><div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; border-radius:4px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column-reverse;">${state.tavernMessages.map(msg => `<div style="margin-bottom:8px; border-bottom:1px solid #e7e5e4; padding-bottom:4px;"><span style="font-weight:bold; color:var(--c-primary); font-size:0.8rem;">${msg.sender}</span><span style="color:#78716c; font-size:0.7rem; margin-left:5px;">${new Date(msg.timestamp?.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span><div style="color:var(--c-text);">${msg.text}</div></div>`).join('')}</div><div style="display:flex; gap:10px;"><input type="text" class="input-field" style="margin-bottom:0;" placeholder="Say something..." value="${state.chatInput}" oninput="window.actions.updateChatInput(this.value)" onkeydown="if(event.key==='Enter') window.actions.sendTavernMessage()"><button class="btn btn-primary" onclick="window.actions.sendTavernMessage()">Send</button></div></div>`;
-    } else if (state.screen === 'courier') {
-        contentHtml = `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; height:100%;"><div style="display:flex; flex-direction:column;"><h3>Inbox</h3><div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; padding:10px; border-radius:4px;">${state.inboxMessages.length === 0 ? '<div class="sub-text text-center">No messages.</div>' : state.inboxMessages.map(msg => `<div class="card" style="padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; border-bottom:1px solid #e7e5e4; padding-bottom:5px; margin-bottom:5px;"><span style="font-weight:bold;">${msg.sender}</span><span style="font-size:0.7rem; color:#78716c;">${new Date(msg.timestamp?.seconds * 1000).toLocaleString()}</span></div><div>${msg.text}</div></div>`).join('')}</div></div><div><h3>Compose</h3><div class="card"><div class="sub-text" style="margin-bottom:5px;">Recipient Name (Exact Match)</div><input type="text" class="input-field" placeholder="Ranger Name" value="${state.mailTo}" oninput="window.actions.updateMailTo(this.value)"><div class="sub-text" style="margin-bottom:5px;">Message</div><textarea class="input-field" style="height:100px; font-family:inherit;" placeholder="Write your letter..." oninput="window.actions.updateMailBody(this.value)">${state.mailBody}</textarea><button class="btn btn-primary btn-full" onclick="window.actions.sendCourierMessage()">Send Pigeon</button></div></div></div>`;
-    } else if (state.screen === 'shop') {
-        contentHtml = `<div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px;"><button onclick="state.shopType='weapon'; render()" class="btn ${type==='weapon' ? 'btn-primary' : 'btn-secondary'}">Blacksmith</button><button onclick="state.shopType='armor'; render()" class="btn ${type==='armor' ? 'btn-primary' : 'btn-secondary'}">Armorer</button></div><div class="grid-list">${items.map(item => { const owned = item.id === currentId; return `<div class="card text-center" style="${owned ? 'border-color:var(--c-success); background:#f0fdf4;' : ''}">${owned ? '<div style="color:var(--c-success); font-size:0.7rem; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Equipped</div>' : ''}<h3>${item.name}</h3><div class="sub-text" style="margin: 10px 0;">${type === 'weapon' ? 'Power' : 'Defense'}: ${type === 'weapon' ? item.power : item.defense}</div><button onclick="window.actions.buyItem('${type}', '${item.id}')" ${owned ? 'disabled' : ''} class="btn ${owned ? 'btn-success' : 'btn-secondary'} btn-full">${owned ? 'Owned' : `${item.cost} Gold`}</button></div>`}).join('')}</div>`;
-    } else if (state.screen === 'gym') {
+        contentHtml = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div class="card text-center">
+                    ${getCharacterHTML(player.gender, player.armorId, player.weaponId)}
+                    <h2 style="border:none;">${player.name}</h2>
+                    <div class="sub-text">Level ${player.level} Ranger</div>
+                    <div class="card" style="margin-top: 20px; text-align: left; background: #f5f5f4;">
+                        <div class="grid-2">
+                            <div><div class="sub-text">Strength</div> <b>${player.str}</b></div>
+                            <div><div class="sub-text">Defense</div> <b>${player.def}</b></div>
+                            <div><div class="sub-text">Health</div> <b style="color:var(--c-success)">${player.hp}/${player.maxHp}</b></div>
+                            <div><div class="sub-text">Exp</div> <b style="color:var(--c-primary)">${player.exp}/${player.expToNext}</b></div>
+                            <div style="grid-column: span 2; padding-top:10px; border-top:1px solid #d6d3d1;">
+                                <div class="sub-text">Equipment</div> <b>${weaponName}</b> & <b>${armorName}</b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    } 
+    else if (state.screen === 'map') {
+        contentHtml = `<h2>World Map</h2><div class="grid-list">` + ZONES.map(zone => { 
+            const locked = player.level < zone.minLvl; 
+            return `<div onclick="${locked ? '' : `window.actions.enterZone('${zone.id}')`}" class="card" style="cursor: ${locked ? 'default' : 'pointer'}; opacity: ${locked ? '0.6' : '1'}; display:flex; justify-content:space-between; align-items:center; background:${zone.bg};">
+            <div><div style="font-weight:bold; font-size:1.1rem; color: ${locked ? '#a8a29e' : 'var(--c-text)'}">${zone.name}</div><div class="sub-text">Lvl ${zone.minLvl}+</div></div>
+            ${locked ? '<i data-lucide="lock" style="color:#d6d3d1"></i>' : '<i data-lucide="compass" style="color:var(--c-primary)"></i>'}</div>`; 
+        }).join('') + `</div>`;
+    } 
+    else if (state.screen === 'zone') {
+        contentHtml = `
+        <div class="flex-between" style="margin-bottom: 20px;">
+            <div><h2>${state.selectedZone.name}</h2><div class="sub-text">Enemies Ahead</div></div>
+            <button onclick="window.actions.navigate('map')" class="btn btn-secondary">Retreat</button>
+        </div>
+        <div class="grid-list">${state.selectedZone.enemies.map((e, idx) => `
+            <div class="card flex-between">
+                <div class="flex-center">
+                    <div style="width:30px; height:30px; background:#e5e5e5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:15px;">${e.level}</div>
+                    <div><div style="font-weight:bold;">${e.name}</div><div class="sub-text">HP: ${e.hp}</div></div>
+                </div>
+                <button onclick="window.actions.startCombat(${idx})" class="btn btn-primary">Fight</button>
+            </div>`).join('')}
+        </div>`;
+    } 
+    else if (state.screen === 'arena') {
+        contentHtml = `
+        <div class="flex-between" style="margin-bottom: 20px;">
+            <div><h2>Battle Arena</h2><div class="sub-text">Challenge other players</div></div>
+            <button onclick="window.actions.togglePvpStatus()" class="btn ${player.allowPvp ? 'btn-success' : 'btn-secondary'}">${player.allowPvp ? 'Challenges: ON' : 'Challenges: OFF'}</button>
+        </div>
+        <div class="grid-list">
+            ${state.arenaList.length === 0 ? '<div class="sub-text">No active players found nearby.</div>' : state.arenaList.map(p => `
+            <div class="card flex-between" style="opacity: ${p.allowPvp ? 1 : 0.5}">
+                <div>
+                    <div style="font-weight:bold;">${p.name} <span class="sub-text">Lvl ${p.level}</span></div>
+                    <div class="sub-text">${p.allowPvp ? 'Ready to fight' : 'Peaceful'}</div>
+                </div>
+                ${p.allowPvp ? `<button onclick="window.actions.challengePlayer('${p.uid}')" class="btn btn-danger">Duel (5 En)</button>` : '<span class="sub-text">Passive</span>'}
+            </div>`).join('')}
+        </div>`;
+    } 
+    else if (state.screen === 'tavern') {
+        contentHtml = `
+        <div style="display:flex; flex-direction:column; height:100%;">
+            <div style="margin-bottom:10px;"><h2>The Tavern</h2><div class="sub-text">Gather and chat</div></div>
+            <div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; border-radius:4px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column-reverse;">
+                ${state.tavernMessages.map(msg => `
+                <div style="margin-bottom:8px; border-bottom:1px solid #e7e5e4; padding-bottom:4px;">
+                    <span style="font-weight:bold; color:var(--c-primary); font-size:0.8rem;">${msg.sender}</span>
+                    <span style="color:#78716c; font-size:0.7rem; margin-left:5px;">${new Date(msg.timestamp?.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <div style="color:var(--c-text);">${msg.text}</div>
+                </div>`).join('')}
+            </div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" class="input-field" style="margin-bottom:0;" placeholder="Say something..." value="${state.chatInput}" oninput="window.actions.updateChatInput(this.value)" onkeydown="if(event.key==='Enter') window.actions.sendTavernMessage()">
+                <button class="btn btn-primary" onclick="window.actions.sendTavernMessage()">Send</button>
+            </div>
+        </div>`;
+    } 
+    else if (state.screen === 'courier') {
+        contentHtml = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; height:100%;">
+            <div style="display:flex; flex-direction:column;">
+                <h3>Inbox</h3>
+                <div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; padding:10px; border-radius:4px;">
+                    ${state.inboxMessages.length === 0 ? '<div class="sub-text text-center">No messages.</div>' : state.inboxMessages.map(msg => `
+                    <div class="card" style="padding:10px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #e7e5e4; padding-bottom:5px; margin-bottom:5px;">
+                            <span style="font-weight:bold;">${msg.sender}</span>
+                            <span style="font-size:0.7rem; color:#78716c;">${new Date(msg.timestamp?.seconds * 1000).toLocaleString()}</span>
+                        </div>
+                        <div>${msg.text}</div>
+                    </div>`).join('')}
+                </div>
+            </div>
+            <div>
+                <h3>Compose</h3>
+                <div class="card">
+                    <div class="sub-text" style="margin-bottom:5px;">Recipient Name (Exact Match)</div>
+                    <input type="text" class="input-field" placeholder="Ranger Name" value="${state.mailTo}" oninput="window.actions.updateMailTo(this.value)">
+                    <div class="sub-text" style="margin-bottom:5px;">Message</div>
+                    <textarea class="input-field" style="height:100px; font-family:inherit;" placeholder="Write your letter..." oninput="window.actions.updateMailBody(this.value)">${state.mailBody}</textarea>
+                    <button class="btn btn-primary btn-full" onclick="window.actions.sendCourierMessage()">Send Pigeon</button>
+                </div>
+            </div>
+        </div>`;
+    } 
+    else if (state.screen === 'shop') {
+        const type = state.shopType || 'weapon';
+        const items = type === 'weapon' ? WEAPONS : ARMOR;
+        const currentId = type === 'weapon' ? player.weaponId : player.armorId;
+        contentHtml = `
+        <div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px;">
+            <button onclick="window.state.shopType='weapon'; render()" class="btn ${type==='weapon' ? 'btn-primary' : 'btn-secondary'}">Blacksmith</button>
+            <button onclick="window.state.shopType='armor'; render()" class="btn ${type==='armor' ? 'btn-primary' : 'btn-secondary'}">Armorer</button>
+        </div>
+        <div class="grid-list">
+            ${items.map(item => { 
+                const owned = item.id === currentId; 
+                return `
+                <div class="card text-center" style="${owned ? 'border-color:var(--c-success); background:#f0fdf4;' : ''}">
+                    ${owned ? '<div style="color:var(--c-success); font-size:0.7rem; text-transform:uppercase; font-weight:bold; margin-bottom:5px;">Equipped</div>' : ''}
+                    <h3>${item.name}</h3>
+                    <div class="sub-text" style="margin: 10px 0;">${type === 'weapon' ? 'Power' : 'Defense'}: ${type === 'weapon' ? item.power : item.defense}</div>
+                    <button onclick="window.actions.buyItem('${type}', '${item.id}')" ${owned ? 'disabled' : ''} class="btn ${owned ? 'btn-success' : 'btn-secondary'} btn-full">
+                        ${owned ? 'Owned' : `${item.cost} Gold`}
+                    </button>
+                </div>`
+            }).join('')}
+        </div>`;
+    } 
+    else if (state.screen === 'gym') {
         const stats = [ { id: 'str', name: 'Strength', icon: 'swords' }, { id: 'def', name: 'Defense', icon: 'shield' }, { id: 'spd', name: 'Speed', icon: 'zap' } ];
-        contentHtml = `<div style="max-width:600px; margin: 0 auto;"><h2 class="text-center">Training Grounds</h2><p class="sub-text text-center">Hone your skills. Training costs 1 more energy than your current stat level.</p><div class="grid-list" style="margin-top:20px;">${stats.map(s => { const cost = player[s.id] + 1; return `<div class="card flex-between"><div class="flex-center"><i data-lucide="${s.icon}" style="margin-right:15px; color:var(--c-primary)"></i><div><div style="font-weight:bold;">${s.name}</div><div class="sub-text">Current: ${player[s.id]}</div></div></div><button onclick="window.actions.trainStat('${s.id}')" class="btn btn-primary">Train (${cost} Energy)</button></div>`; }).join('')}</div></div>`;
-    } else if (state.screen === 'combat') {
+        contentHtml = `
+        <div style="max-width:600px; margin: 0 auto;">
+            <h2 class="text-center">Training Grounds</h2>
+            <p class="sub-text text-center">Hone your skills. Training costs 1 more energy than your current stat level.</p>
+            <div class="grid-list" style="margin-top:20px;">
+                ${stats.map(s => { 
+                    const cost = player[s.id] + 1; 
+                    return `
+                    <div class="card flex-between">
+                        <div class="flex-center">
+                            <i data-lucide="${s.icon}" style="margin-right:15px; color:var(--c-primary)"></i>
+                            <div><div style="font-weight:bold;">${s.name}</div><div class="sub-text">Current: ${player[s.id]}</div></div>
+                        </div>
+                        <button onclick="window.actions.trainStat('${s.id}')" class="btn btn-primary">Train (${cost} Energy)</button>
+                    </div>`; 
+                }).join('')}
+            </div>
+        </div>`;
+    } 
+    else if (state.screen === 'combat') {
         const { enemy, log } = state.combat;
-        contentHtml = `<div style="max-width: 500px; margin: 0 auto;"><div class="combat-scene"><div class="scene-flex"><div class="text-center"><div class="sub-text">Ranger</div>${getCharacterHTML(player.gender, player.armorId, player.weaponId)}<div style="font-weight:bold; color:var(--c-success);">${player.hp} HP</div></div><div class="vs-text">vs</div><div class="text-center"><div class="sub-text">${enemy.name}</div>${getEnemyPortraitHTML(enemy.name)}<div style="font-weight:bold; color:var(--c-danger);">${enemy.hp} HP</div></div></div></div><div class="log-box" style="margin-bottom: 20px;">${log.map(l => `<div class="log-entry">> ${l}</div>`).join('')}</div><div class="grid-2"><button onclick="window.actions.combatRound('attack')" class="btn btn-danger btn-full" style="padding: 15px;">Attack</button><button onclick="window.actions.combatRound('flee')" class="btn btn-secondary btn-full" style="padding: 15px;">Flee</button></div></div>`;
-    } else if (state.screen === 'hospital') {
-        contentHtml = `<div class="card text-center" style="max-width:400px; margin: 0 auto; padding: 40px;"><i data-lucide="tent" style="width: 64px; height: 64px; color: var(--c-success); margin-bottom: 20px;"></i><h2>Ranger's Camp</h2><p style="color:var(--c-text-muted); margin-bottom: 30px;">Rest by the fire to mend your wounds.</p><div style="font-size: 2rem; font-weight: bold; color: var(--c-success); margin-bottom: 30px;">${player.hp} <span style="font-size: 1.2rem; color: #d6d3d1;">/ ${player.maxHp}</span></div><button onclick="window.actions.heal()" ${cost === 0 ? 'disabled' : ''} class="btn btn-success btn-full">${cost === 0 ? 'Fully Rested' : `Rest (${cost} Gold)`}</button></div>`;
+        contentHtml = `
+        <div style="max-width: 500px; margin: 0 auto;">
+            <div class="combat-scene">
+                <div class="scene-flex">
+                    <div class="text-center">
+                        <div class="sub-text">Ranger</div>
+                        ${getCharacterHTML(player.gender, player.armorId, player.weaponId)}
+                        <div style="font-weight:bold; color:var(--c-success);">${player.hp} HP</div>
+                    </div>
+                    <div class="vs-text">vs</div>
+                    <div class="text-center">
+                        <div class="sub-text">${enemy.name}</div>
+                        ${getEnemyPortraitHTML(enemy.name)}
+                        <div style="font-weight:bold; color:var(--c-danger);">${enemy.hp} HP</div>
+                    </div>
+                </div>
+            </div>
+            <div class="log-box" style="margin-bottom: 20px;">${log.map(l => `<div class="log-entry">> ${l}</div>`).join('')}</div>
+            <div class="grid-2">
+                <button onclick="window.actions.combatRound('attack')" class="btn btn-danger btn-full" style="padding: 15px;">Attack</button>
+                <button onclick="window.actions.combatRound('flee')" class="btn btn-secondary btn-full" style="padding: 15px;">Flee</button>
+            </div>
+        </div>`;
+    } 
+    else if (state.screen === 'hospital') {
+        const cost = player.maxHp - player.hp;
+        contentHtml = `
+        <div class="card text-center" style="max-width:400px; margin: 0 auto; padding: 40px;">
+            <i data-lucide="tent" style="width: 64px; height: 64px; color: var(--c-success); margin-bottom: 20px;"></i>
+            <h2>Ranger's Camp</h2>
+            <p style="color:var(--c-text-muted); margin-bottom: 30px;">Rest by the fire to mend your wounds.</p>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--c-success); margin-bottom: 30px;">
+                ${player.hp} <span style="font-size: 1.2rem; color: #d6d3d1;">/ ${player.maxHp}</span>
+            </div>
+            <button onclick="window.actions.heal()" ${cost === 0 ? 'disabled' : ''} class="btn btn-success btn-full">
+                ${cost === 0 ? 'Fully Rested' : `Rest (${cost} Gold)`}
+            </button>
+        </div>`;
     }
 
     app.innerHTML = `
