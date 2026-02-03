@@ -614,16 +614,33 @@ window.actions = {
             let newExp = player.exp + enemy.exp;
             let newLevel = player.level;
             let newMaxHp = player.maxHp;
+            let newMaxEnergy = player.maxEnergy; // New Energy logic
+
             let msg = `Victory! +${enemy.gold}g +${enemy.exp}xp.`;
             AudioController.playSFX('gold');
             if (newExp >= player.expToNext) {
                 newLevel++;
                 newExp -= player.expToNext;
                 newMaxHp += 15;
-                msg += " LEVEL UP!";
+                // Add 1 max energy every 2 levels (even levels)
+                if (newLevel % 2 === 0) {
+                    newMaxEnergy += 1;
+                    msg += " LEVEL UP! +1 Max Energy!";
+                } else {
+                    msg += " LEVEL UP!";
+                }
                 AudioController.playSFX('level');
             }
-            await setDoc(getPlayerRef(state.user.uid), { gold: player.gold + enemy.gold, exp: newExp, level: newLevel, maxHp: newMaxHp, wins: player.wins + 1 }, { merge: true });
+            // Save new maxEnergy to DB
+            await setDoc(getPlayerRef(state.user.uid), {
+                gold: player.gold + enemy.gold,
+                exp: newExp,
+                level: newLevel,
+                maxHp: newMaxHp,
+                maxEnergy: newMaxEnergy,
+                wins: player.wins + 1
+            }, { merge: true });
+
             addLog(msg);
             updateState({ screen: state.combat.type === 'pvp' ? 'arena' : 'zone', combat: null });
             return;
@@ -705,12 +722,26 @@ window.addEventListener('firebase-ready', () => {
                         AudioController.playTheme('home');
                     }
                     updateState({ loading: false });
+                    
+                    // Energy Regen Loop (Every 10 seconds)
                     if (!window.regenInterval) {
                         window.regenInterval = setInterval(() => {
                             const p = state.player;
                             if (p) setDoc(getPlayerRef(u.uid), { energy: Math.min(p.energy + 1, p.maxEnergy), lastSeen: window.FB.serverTimestamp() }, { merge: true });
                         }, 10000);
                     }
+
+                    // NEW: HP Regen Loop (Every 60 seconds)
+                    if (!window.hpRegenInterval) {
+                        window.hpRegenInterval = setInterval(() => {
+                            const p = state.player;
+                            // Only regen if current HP is less than Max HP
+                            if (p && p.hp < p.maxHp) {
+                                setDoc(getPlayerRef(u.uid), { hp: Math.min(p.hp + 1, p.maxHp) }, { merge: true });
+                            }
+                        }, 60000); // 1 minute
+                    }
+
                 } else {
                     signOut(window.auth);
                     updateState({ player: null, screen: 'auth' });
