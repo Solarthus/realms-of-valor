@@ -109,7 +109,6 @@ window.actions = {
         render();
     },
 
-    // NEW: Keep track of inputs so they don't vanish
     updateInput: (field, value) => {
         state.authForm[field] = value;
     },
@@ -288,6 +287,27 @@ window.actions = {
         addLog(`Acquired: ${item.name}`);
     },
 
+    trainStat: async (stat) => {
+        const player = state.player;
+        const cost = player[stat] + 1;
+        
+        if (player.energy < cost) {
+            alert(`You need ${cost} Energy to train ${stat.toUpperCase()}.`);
+            return;
+        }
+
+        const { setDoc } = window.FB;
+        const playerRef = getPlayerRef(state.user.uid);
+        
+        const updates = {
+            energy: player.energy - cost,
+            [stat]: player[stat] + 1
+        };
+
+        await setDoc(playerRef, updates, { merge: true });
+        addLog(`Trained ${stat.toUpperCase()}! Current: ${player[stat] + 1}`);
+    },
+
     logout: () => {
         window.FB.signOut(window.auth);
         window.location.reload();
@@ -296,7 +316,6 @@ window.actions = {
 
 // --- FIREBASE LISTENERS ---
 window.addEventListener('firebase-ready', () => {
-    console.log("Firebase is ready in game.js");
     const { onAuthStateChanged, onSnapshot, setDoc, signOut } = window.FB;
     
     onAuthStateChanged(window.auth, (u) => {
@@ -304,7 +323,6 @@ window.addEventListener('firebase-ready', () => {
         if (!u) {
             updateState({ screen: 'auth', loading: false });
         } else {
-            console.log("User logged in:", u.uid);
             const docRef = getPlayerRef(u.uid);
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
@@ -323,10 +341,7 @@ window.addEventListener('firebase-ready', () => {
                         }, 10000);
                     }
                 } else {
-                    // --- ZOMBIE ACCOUNT FIX ---
-                    console.log("User exists, but profile not found.");
-                    alert("Character data not found! Please register a new hero.");
-                    signOut(window.auth); // Log them out so they can try again
+                    signOut(window.auth);
                     updateState({ player: null, screen: 'auth' });
                 }
             });
@@ -350,29 +365,22 @@ function render() {
                 <h1 style="margin-bottom:20px;">Realms of Valor</h1>
                 <form id="authForm" onsubmit="window.actions.handleLogin(event)">
                     ${state.authForm.error ? `<div style="color:red; margin-bottom:10px;">${state.authForm.error}</div>` : ''}
-                    
                     <input type="email" placeholder="Email" required class="input-field" 
                         value="${state.authForm.email || ''}"
                         oninput="window.actions.updateInput('email', this.value)">
-                        
                     <input type="password" placeholder="Password" required class="input-field"
                         value="${state.authForm.password || ''}"
                         oninput="window.actions.updateInput('password', this.value)">
-                    
                     ${state.authForm.isRegistering ? `
                         <input type="text" placeholder="Hero Name" required class="input-field"
                             value="${state.authForm.name || ''}"
                             oninput="window.actions.updateInput('name', this.value)">
-                            
                         <select id="genderSelect" class="input-field">
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                         </select>
                     ` : ''}
-                    
-                    <button type="submit" class="btn btn-primary btn-full">
-                        ${state.authForm.isRegistering ? 'Create Hero' : 'Load Game'}
-                    </button>
+                    <button type="submit" class="btn btn-primary btn-full">${state.authForm.isRegistering ? 'Create Hero' : 'Load Game'}</button>
                 </form>
                 <div style="margin-top:15px; font-size: 0.8rem; cursor:pointer;" onclick="window.actions.setAuthMode(!state.authForm.isRegistering)">
                     ${state.authForm.isRegistering ? 'Already have a hero? Login' : 'Need a hero? Register'}
@@ -387,7 +395,6 @@ function render() {
 
     let contentHtml = '';
 
-    // --- HOME SCREEN ---
     if (state.screen === 'home') {
         const weaponName = WEAPONS.find(w => w.id === player.weaponId).name;
         const armorName = ARMOR.find(a => a.id === player.armorId).name;
@@ -397,7 +404,6 @@ function render() {
                     ${getCharacterHTML(player.gender, player.armorId, player.weaponId)}
                     <h2 style="border:none;">${player.name}</h2>
                     <div class="sub-text">Level ${player.level} Ranger</div>
-                    
                     <div class="card" style="margin-top: 20px; text-align: left; background: #f5f5f4;">
                         <div class="grid-2">
                             <div><div class="sub-text">Strength</div> <b>${player.str}</b></div>
@@ -411,15 +417,11 @@ function render() {
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
-    // --- MAP SCREEN ---
     else if (state.screen === 'map') {
-        contentHtml = `
-        <h2>World Map</h2>
-        <div class="grid-list">`;
+        contentHtml = `<h2>World Map</h2><div class="grid-list">`;
         ZONES.forEach(zone => {
             const locked = player.level < zone.minLvl;
             contentHtml += `
@@ -436,14 +438,10 @@ function render() {
         contentHtml += `</div>`;
     }
 
-    // --- ZONE SCREEN ---
     else if (state.screen === 'zone') {
         contentHtml = `
             <div class="flex-between" style="margin-bottom: 20px;">
-                <div>
-                    <h2>${state.selectedZone.name}</h2>
-                    <div class="sub-text">Enemies Ahead</div>
-                </div>
+                <div><h2>${state.selectedZone.name}</h2><div class="sub-text">Enemies Ahead</div></div>
                 <button onclick="window.actions.navigate('map')" class="btn btn-secondary">Retreat</button>
             </div>
             <div class="grid-list">
@@ -451,24 +449,18 @@ function render() {
                     <div class="card flex-between">
                         <div class="flex-center">
                             <div style="width:30px; height:30px; background:#e5e5e5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:15px;">${e.level}</div>
-                            <div>
-                                <div style="font-weight:bold;">${e.name}</div>
-                                <div class="sub-text">HP: ${e.hp}</div>
-                            </div>
+                            <div><div style="font-weight:bold;">${e.name}</div><div class="sub-text">HP: ${e.hp}</div></div>
                         </div>
                         <button onclick="window.actions.startCombat(${idx})" class="btn btn-primary">Fight</button>
                     </div>
                 `).join('')}
-            </div>
-        `;
+            </div>`;
     }
 
-    // --- SHOP SCREEN ---
     else if (state.screen === 'shop') {
         const type = state.shopType || 'weapon';
         const items = type === 'weapon' ? WEAPONS : ARMOR;
         const currentId = type === 'weapon' ? player.weaponId : player.armorId;
-        
         contentHtml = `
             <div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px;">
                 <button onclick="state.shopType='weapon'; render()" class="btn ${type==='weapon' ? 'btn-primary' : 'btn-secondary'}">Blacksmith</button>
@@ -483,49 +475,57 @@ function render() {
                         <h3>${item.name}</h3>
                         <div class="sub-text" style="margin: 10px 0;">${type === 'weapon' ? 'Power' : 'Defense'}: ${type === 'weapon' ? item.power : item.defense}</div>
                         <button onclick="window.actions.buyItem('${type}', '${item.id}')" ${owned ? 'disabled' : ''} 
-                            class="btn ${owned ? 'btn-success' : 'btn-secondary'} btn-full">
-                            ${owned ? 'Owned' : `${item.cost} Gold`}
-                        </button>
+                            class="btn ${owned ? 'btn-success' : 'btn-secondary'} btn-full">${owned ? 'Owned' : `${item.cost} Gold`}</button>
                     </div>`
                 }).join('')}
-            </div>
-        `;
+            </div>`;
     }
 
-    // --- COMBAT SCREEN ---
+    else if (state.screen === 'gym') {
+        const stats = [
+            { id: 'str', name: 'Strength', icon: 'swords' },
+            { id: 'def', name: 'Defense', icon: 'shield' },
+            { id: 'spd', name: 'Speed', icon: 'zap' }
+        ];
+        contentHtml = `
+            <div style="max-width:600px; margin: 0 auto;">
+                <h2 class="text-center">Training Grounds</h2>
+                <p class="sub-text text-center">Hone your skills. Training costs 1 more energy than your current stat level.</p>
+                <div class="grid-list" style="margin-top:20px;">
+                    ${stats.map(s => {
+                        const cost = player[s.id] + 1;
+                        return `
+                        <div class="card flex-between">
+                            <div class="flex-center">
+                                <i data-lucide="${s.icon}" style="margin-right:15px; color:var(--c-primary)"></i>
+                                <div><div style="font-weight:bold;">${s.name}</div><div class="sub-text">Current: ${player[s.id]}</div></div>
+                            </div>
+                            <button onclick="window.actions.trainStat('${s.id}')" class="btn btn-primary">Train (${cost} Energy)</button>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+    }
+
     else if (state.screen === 'combat') {
         const { enemy, log } = state.combat;
         contentHtml = `
             <div style="max-width: 500px; margin: 0 auto;">
                 <div class="combat-scene">
                     <div class="scene-flex">
-                        <div class="text-center">
-                            <div class="sub-text">Ranger</div>
-                            ${getCharacterHTML(player.gender, player.armorId, player.weaponId)}
-                            <div style="font-weight:bold; color:var(--c-success);">${player.hp} HP</div>
-                        </div>
+                        <div class="text-center"><div class="sub-text">Ranger</div>${getCharacterHTML(player.gender, player.armorId, player.weaponId)}<div style="font-weight:bold; color:var(--c-success);">${player.hp} HP</div></div>
                         <div class="vs-text">vs</div>
-                        <div class="text-center">
-                            <div class="sub-text">${enemy.name}</div>
-                            ${getEnemyPortraitHTML(enemy.name)}
-                            <div style="font-weight:bold; color:var(--c-danger);">${enemy.hp} HP</div>
-                        </div>
+                        <div class="text-center"><div class="sub-text">${enemy.name}</div>${getEnemyPortraitHTML(enemy.name)}<div style="font-weight:bold; color:var(--c-danger);">${enemy.hp} HP</div></div>
                     </div>
                 </div>
-                
-                <div class="log-box" style="margin-bottom: 20px;">
-                    ${log.map(l => `<div class="log-entry">> ${l}</div>`).join('')}
-                </div>
-
+                <div class="log-box" style="margin-bottom: 20px;">${log.map(l => `<div class="log-entry">> ${l}</div>`).join('')}</div>
                 <div class="grid-2">
                     <button onclick="window.actions.combatRound('attack')" class="btn btn-danger btn-full" style="padding: 15px;">Attack</button>
                     <button onclick="window.actions.combatRound('flee')" class="btn btn-secondary btn-full" style="padding: 15px;">Flee</button>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
-    // --- HOSPITAL SCREEN ---
     else if (state.screen === 'hospital') {
         const cost = player.maxHp - player.hp;
         contentHtml = `
@@ -533,35 +533,29 @@ function render() {
                 <i data-lucide="tent" style="width: 64px; height: 64px; color: var(--c-success); margin-bottom: 20px;"></i>
                 <h2>Ranger's Camp</h2>
                 <p style="color:var(--c-text-muted); margin-bottom: 30px;">Rest by the fire to mend your wounds.</p>
-                
                 <div style="font-size: 2rem; font-weight: bold; color: var(--c-success); margin-bottom: 30px;">
                     ${player.hp} <span style="font-size: 1.2rem; color: #d6d3d1;">/ ${player.maxHp}</span>
                 </div>
-                
                 <button onclick="window.actions.heal()" ${cost === 0 ? 'disabled' : ''} class="btn btn-success btn-full">
                     ${cost === 0 ? 'Fully Rested' : `Rest (${cost} Gold)`}
                 </button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // --- MASTER LAYOUT ---
     app.innerHTML = `
     <div class="app-container">
         <div class="sidebar">
-            <div style="padding: 20px; text-align: center; border-bottom: 1px solid #292524;">
-                <h1 style="color: var(--c-primary); font-size: 1.1rem;">REALMS OF VALOR</h1>
-            </div>
+            <div style="padding: 20px; text-align: center; border-bottom: 1px solid #292524;"><h1 style="color: var(--c-primary); font-size: 1.1rem;">REALMS OF VALOR</h1></div>
             <nav style="flex: 1; padding-top: 20px;">
                 <button onclick="window.actions.navigate('home')" class="nav-btn"><i data-lucide="castle"></i> Character</button>
                 <button onclick="window.actions.navigate('map')" class="nav-btn"><i data-lucide="map"></i> World Map</button>
+                <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"></i> Training Gym</button>
                 <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"></i> Blacksmith</button>
                 <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"></i> Campfire</button>
                 <div style="margin: 20px; border-top: 1px solid #292524;"></div>
                 <button onclick="window.actions.logout()" class="nav-btn" style="color: #ef4444;"><i data-lucide="log-out"></i> Depart</button>
             </nav>
         </div>
-
         <div class="main-content">
             <div class="top-bar">
                 <div class="stat-tag hp"><i data-lucide="heart" width="14" style="margin-right:5px"></i> ${player.hp}</div>
@@ -569,20 +563,14 @@ function render() {
                 <div class="stat-tag gold"><span style="margin-right:5px">●</span> ${player.gold}</div>
                 <div class="stat-tag">Lvl ${player.level}</div>
             </div>
-
-            <div class="scroll-area">
-                ${contentHtml}
-            </div>
-            
+            <div class="scroll-area">${contentHtml}</div>
             <div class="log-box" style="height: 100px; flex-shrink: 0; border-top: 1px solid var(--border-strong);">
                 ${state.logs.map(l => `<div class="log-entry">> ${l}</div>`).join('')}
             </div>
         </div>
-    </div>
-    `;
+    </div>`;
 
     if(window.lucide) window.lucide.createIcons();
 }
 
-console.log("Game.js loaded. Initializing render...");
 render();
