@@ -360,6 +360,9 @@ const state = {
     tavernMessages: [],
     inboxMessages: [],
     chatInput: '',
+    // ADDED: Reply State
+    replyingTo: null,
+    replyInput: '',
     mailTo: '',
     mailBody: '',
     shopType: 'weapon'
@@ -507,6 +510,30 @@ window.actions = {
         state.chatInput = '';
         render();
     },
+
+    // --- NEW REPLY ACTIONS ---
+    openReply: (id, name) => {
+        state.replyingTo = id;
+        state.replyInput = `@${name} `;
+        render();
+    },
+    updateReplyInput: (val) => {
+        state.replyInput = val;
+    },
+    sendReply: async () => {
+        if (!state.replyInput.trim()) return;
+        AudioController.playSFX('click');
+        const { addDoc, collection, serverTimestamp } = window.FB;
+        await addDoc(collection(window.db, 'artifacts', window.appId, 'public', 'data', 'chat'), {
+            sender: state.player.name,
+            text: state.replyInput.trim(),
+            timestamp: serverTimestamp()
+        });
+        state.replyingTo = null;
+        state.replyInput = '';
+        render();
+    },
+    // -----------------------
 
     updateMailTo: (val) => {
         state.mailTo = val;
@@ -801,9 +828,19 @@ function render() {
             <div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; border-radius:4px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column-reverse;">
                 ${state.tavernMessages.map(msg => `
                 <div style="margin-bottom:8px; border-bottom:1px solid #e7e5e4; padding-bottom:4px;">
-                    <span style="font-weight:bold; color:var(--c-primary); font-size:0.8rem;">${msg.sender}</span>
-                    <span style="color:#78716c; font-size:0.7rem; margin-left:5px;">${new Date(msg.timestamp?.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:bold; color:var(--c-primary); font-size:0.8rem;">${msg.sender}</span>
+                            <span style="color:#78716c; font-size:0.7rem; margin-left:5px;">${new Date(msg.timestamp?.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <button onclick="window.actions.openReply('${msg.id}', '${msg.sender}')" class="btn-xs" style="background:none; border:none; color:var(--c-primary); cursor:pointer; font-size:0.7rem;">Reply</button>
+                    </div>
                     <div style="color:var(--c-text);">${msg.text}</div>
+                    ${state.replyingTo === msg.id ? `
+                    <div style="margin-top:5px; padding:5px; background:#e5e7eb; border-radius:4px; display:flex; gap:5px;">
+                        <input type="text" class="input-field" style="margin-bottom:0; font-size:0.8rem; height:30px;" value="${state.replyInput}" oninput="window.actions.updateReplyInput(this.value)" onkeydown="if(event.key==='Enter') window.actions.sendReply()">
+                        <button class="btn btn-primary" style="padding:0 10px; font-size:0.8rem; height:30px;" onclick="window.actions.sendReply()">Send</button>
+                    </div>` : ''}
                 </div>`).join('')}
             </div>
             <div style="display:flex; gap:10px;">
@@ -927,15 +964,15 @@ function render() {
         <div class="sidebar">
             <div style="padding: 20px; text-align: center; border-bottom: 1px solid #292524;"><h1 style="color: var(--c-primary); font-size: 1.1rem;">REALMS OF VALOR</h1></div>
             <nav style="flex: 1; padding-top: 20px;">
-                <button onclick="window.actions.navigate('home')" class="nav-btn"><i data-lucide="castle"> </i> Character</button>
-                <button onclick="window.actions.navigate('map')" class="nav-btn"><i data-lucide="map"> </i> World Map</button>
-                <button onclick="window.actions.enterArena()" class="nav-btn"><i data-lucide="swords"> </i> Arena (PvP)</button>
-                <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"> </i> Training Gym</button>
-                <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"> </i> Blacksmith</button>
-                <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"> </i> Campfire</button>
+                <button onclick="window.actions.navigate('home')" class="nav-btn"><i data-lucide="castle"></i> Character</button>
+                <button onclick="window.actions.navigate('map')" class="nav-btn"><i data-lucide="map"></i> World Map</button>
+                <button onclick="window.actions.enterArena()" class="nav-btn"><i data-lucide="swords"></i> Arena (PvP)</button>
+                <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"></i> Training Gym</button>
+                <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"></i> Blacksmith</button>
+                <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"></i> Campfire</button>
                 <div style="margin: 20px 0 10px 20px; font-size:0.7rem; color:#57534e; text-transform:uppercase;">Social</div>
-                <button onclick="window.actions.navigate('tavern')" class="nav-btn"><i data-lucide="message-circle"> </i> Tavern</button>
-                <button onclick="window.actions.navigate('courier')" class="nav-btn"><i data-lucide="mail"> </i> Courier Pigeon</button>
+                <button onclick="window.actions.navigate('tavern')" class="nav-btn"><i data-lucide="message-circle"></i> Tavern</button>
+                <button onclick="window.actions.navigate('courier')" class="nav-btn"><i data-lucide="mail"></i> Courier Pigeon</button>
                 <div style="margin: 20px 0 10px 20px; font-size:0.7rem; color:#57534e; text-transform:uppercase;">Settings</div>
                 <button onclick="window.actions.toggleMusic()" class="nav-btn"><i data-lucide="${AudioController.musicOn ? 'volume-2' : 'volume-x'}"></i> ${AudioController.musicOn ? 'Music: ON' : 'Music: OFF'}</button>
                 <div style="margin: 20px; border-top: 1px solid #292524;"></div>
