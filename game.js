@@ -81,7 +81,12 @@ const state = {
     combat: null,
     logs: ['Welcome, Ranger. The world needs you.'],
     authForm: { email: '', password: '', name: '', isRegistering: false, error: '' },
-    loading: true
+    loading: true,
+    tavernMessages: [], // Forum Data
+    inboxMessages: [],  // Courier Data
+    chatInput: '',
+    mailTo: '',
+    mailBody: ''
 };
 
 function updateState(updates) {
@@ -121,7 +126,7 @@ window.actions = {
             return;
         }
 
-        const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc } = window.FB;
+        const { signInWithEmailAndPassword, createUserWithEmailAndPassword, setDoc, doc } = window.FB;
         const email = state.authForm.email;
         const password = state.authForm.password;
         
@@ -130,10 +135,14 @@ window.actions = {
                 const name = state.authForm.name;
                 const gender = document.getElementById('genderSelect').value;
                 
+                // Name Check (Simple sanitization)
+                if(!name || name.trim() === "") { throw new Error("Name required"); }
+                const safeName = name.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+
                 const cred = await createUserWithEmailAndPassword(window.auth, email, password);
 
                 const initialProfile = {
-                    name: name,
+                    name: name.trim(),
                     gender: gender,
                     level: 1, exp: 0, expToNext: 100,
                     hp: 30, maxHp: 30,
@@ -144,7 +153,15 @@ window.actions = {
                     wins: 0, losses: 0
                 };
                 
+                // Save Profile
                 await setDoc(getPlayerRef(cred.user.uid), initialProfile);
+                
+                // Save Public Directory Lookup (For Courier Pigeon)
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'user_map', safeName), {
+                    uid: cred.user.uid,
+                    realName: name
+                });
+
             } else {
                 await signInWithEmailAndPassword(window.auth, email, password);
             }
@@ -156,6 +173,57 @@ window.actions = {
     },
 
     navigate: (screen) => { updateState({ screen }); },
+
+    // --- CHAT ACTIONS ---
+    updateChatInput: (val) => { state.chatInput = val; },
+    sendTavernMessage: async () => {
+        if(!state.chatInput.trim()) return;
+        const { addDoc, collection, serverTimestamp } = window.FB;
+        try {
+            await addDoc(collection(window.db, 'artifacts', window.appId, 'public', 'data', 'chat'), {
+                sender: state.player.name,
+                text: state.chatInput.trim(),
+                timestamp: serverTimestamp()
+            });
+            state.chatInput = '';
+            render();
+        } catch(e) { console.error(e); }
+    },
+
+    updateMailTo: (val) => { state.mailTo = val; },
+    updateMailBody: (val) => { state.mailBody = val; },
+    sendCourierMessage: async () => {
+        if(!state.mailTo.trim() || !state.mailBody.trim()) { alert("Fill in recipient and message."); return; }
+        const { addDoc, collection, serverTimestamp, doc, getDoc } = window.FB;
+        
+        const targetName = state.mailTo.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        try {
+            // 1. Find User UID
+            const mapRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'user_map', targetName);
+            const mapSnap = await getDoc(mapRef);
+            
+            if(!mapSnap.exists()) {
+                alert("Ranger not found in the directory. (Exact name match required)");
+                return;
+            }
+            
+            const targetUid = mapSnap.data().uid;
+            
+            // 2. Send to their Inbox
+            await addDoc(collection(window.db, 'artifacts', window.appId, 'users', targetUid, 'inbox'), {
+                sender: state.player.name,
+                text: state.mailBody.trim(),
+                timestamp: serverTimestamp(),
+                read: false
+            });
+            
+            alert("Pigeon dispatched!");
+            state.mailTo = '';
+            state.mailBody = '';
+            render();
+        } catch(e) { console.error(e); alert("Error sending mail."); }
+    },
 
     enterZone: (zoneId) => {
         const zone = ZONES.find(z => z.id === zoneId);
@@ -316,14 +384,18 @@ window.actions = {
 
 // --- FIREBASE LISTENERS ---
 window.addEventListener('firebase-ready', () => {
-    const { onAuthStateChanged, onSnapshot, setDoc, signOut } = window.FB;
+    console.log("Firebase is ready in game.js");
+    const { onAuthStateChanged, onSnapshot, setDoc, signOut, collection } = window.FB;
     
     onAuthStateChanged(window.auth, (u) => {
         state.user = u;
         if (!u) {
             updateState({ screen: 'auth', loading: false });
         } else {
+            console.log("User logged in:", u.uid);
             const docRef = getPlayerRef(u.uid);
+            
+            // 1. Profile Listener
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
                     state.player = snap.data();
@@ -341,9 +413,28 @@ window.addEventListener('firebase-ready', () => {
                         }, 10000);
                     }
                 } else {
+                    console.log("User exists, but profile not found.");
+                    alert("Character data not found! Please register a new hero.");
                     signOut(window.auth);
                     updateState({ player: null, screen: 'auth' });
                 }
+            });
+
+            // 2. Tavern Listener (Global Chat)
+            const chatRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'chat');
+            onSnapshot(chatRef, (snapshot) => {
+                const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Sort client side (no index needed)
+                msgs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                updateState({ tavernMessages: msgs.slice(0, 50) }); // Keep last 50
+            });
+
+            // 3. Courier Listener (Inbox)
+            const inboxRef = collection(window.db, 'artifacts', window.appId, 'users', u.uid, 'inbox');
+            onSnapshot(inboxRef, (snapshot) => {
+                const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                msgs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                updateState({ inboxMessages: msgs });
             });
         }
     });
@@ -457,6 +548,57 @@ function render() {
             </div>`;
     }
 
+    else if (state.screen === 'tavern') {
+        contentHtml = `
+            <div style="display:flex; flex-direction:column; height:100%;">
+                <div style="margin-bottom:10px;"><h2>The Tavern</h2><div class="sub-text">Gather and chat</div></div>
+                <div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; border-radius:4px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column-reverse;">
+                    ${state.tavernMessages.map(msg => `
+                        <div style="margin-bottom:8px; border-bottom:1px solid #e7e5e4; padding-bottom:4px;">
+                            <span style="font-weight:bold; color:var(--c-primary); font-size:0.8rem;">${msg.sender}</span>
+                            <span style="color:#78716c; font-size:0.7rem; margin-left:5px;">${new Date(msg.timestamp?.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div style="color:var(--c-text);">${msg.text}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" class="input-field" style="margin-bottom:0;" placeholder="Say something..." value="${state.chatInput}" oninput="window.actions.updateChatInput(this.value)" onkeydown="if(event.key==='Enter') window.actions.sendTavernMessage()">
+                    <button class="btn btn-primary" onclick="window.actions.sendTavernMessage()">Send</button>
+                </div>
+            </div>`;
+    }
+
+    else if (state.screen === 'courier') {
+        contentHtml = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; height:100%;">
+                <div style="display:flex; flex-direction:column;">
+                    <h3>Inbox</h3>
+                    <div style="flex:1; overflow-y:auto; background:#f5f5f4; border:1px solid #d6d3d1; padding:10px; border-radius:4px;">
+                        ${state.inboxMessages.length === 0 ? '<div class="sub-text text-center">No messages.</div>' : 
+                        state.inboxMessages.map(msg => `
+                            <div class="card" style="padding:10px; margin-bottom:10px;">
+                                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #e7e5e4; padding-bottom:5px; margin-bottom:5px;">
+                                    <span style="font-weight:bold;">${msg.sender}</span>
+                                    <span style="font-size:0.7rem; color:#78716c;">${new Date(msg.timestamp?.seconds * 1000).toLocaleString()}</span>
+                                </div>
+                                <div>${msg.text}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h3>Compose</h3>
+                    <div class="card">
+                        <div class="sub-text" style="margin-bottom:5px;">Recipient Name (Exact Match)</div>
+                        <input type="text" class="input-field" placeholder="Ranger Name" value="${state.mailTo}" oninput="window.actions.updateMailTo(this.value)">
+                        <div class="sub-text" style="margin-bottom:5px;">Message</div>
+                        <textarea class="input-field" style="height:100px; font-family:inherit;" placeholder="Write your letter..." oninput="window.actions.updateMailBody(this.value)">${state.mailBody}</textarea>
+                        <button class="btn btn-primary btn-full" onclick="window.actions.sendCourierMessage()">Send Pigeon</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
     else if (state.screen === 'shop') {
         const type = state.shopType || 'weapon';
         const items = type === 'weapon' ? WEAPONS : ARMOR;
@@ -552,6 +694,11 @@ function render() {
                 <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"></i> Training Gym</button>
                 <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"></i> Blacksmith</button>
                 <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"></i> Campfire</button>
+                
+                <div style="margin: 20px 0 10px 20px; font-size:0.7rem; color:#57534e; text-transform:uppercase;">Social</div>
+                <button onclick="window.actions.navigate('tavern')" class="nav-btn"><i data-lucide="message-circle"></i> Tavern</button>
+                <button onclick="window.actions.navigate('courier')" class="nav-btn"><i data-lucide="mail"></i> Courier Pigeon</button>
+
                 <div style="margin: 20px; border-top: 1px solid #292524;"></div>
                 <button onclick="window.actions.logout()" class="nav-btn" style="color: #ef4444;"><i data-lucide="log-out"></i> Depart</button>
             </nav>
