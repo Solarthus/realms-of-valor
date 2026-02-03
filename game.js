@@ -927,15 +927,15 @@ function render() {
         <div class="sidebar">
             <div style="padding: 20px; text-align: center; border-bottom: 1px solid #292524;"><h1 style="color: var(--c-primary); font-size: 1.1rem;">REALMS OF VALOR</h1></div>
             <nav style="flex: 1; padding-top: 20px;">
-                <button onclick="window.actions.navigate('home')" class="nav-btn"><i data-lucide="castle"></i> Character</button>
-                <button onclick="window.actions.navigate('map')" class="nav-btn"><i data-lucide="map"></i> World Map</button>
-                <button onclick="window.actions.enterArena()" class="nav-btn"><i data-lucide="swords"></i> Arena (PvP)</button>
-                <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"></i> Training Gym</button>
-                <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"></i> Blacksmith</button>
-                <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"></i> Campfire</button>
+                <button onclick="window.actions.navigate('home')" class="nav-btn"><i data-lucide="castle"> </i> Character</button>
+                <button onclick="window.actions.navigate('map')" class="nav-btn"><i data-lucide="map"> </i> World Map</button>
+                <button onclick="window.actions.enterArena()" class="nav-btn"><i data-lucide="swords"> </i> Arena (PvP)</button>
+                <button onclick="window.actions.navigate('gym')" class="nav-btn"><i data-lucide="dumbbell"> </i> Training Gym</button>
+                <button onclick="window.actions.navigate('shop')" class="nav-btn"><i data-lucide="hammer"> </i> Blacksmith</button>
+                <button onclick="window.actions.navigate('hospital')" class="nav-btn"><i data-lucide="tent"> </i> Campfire</button>
                 <div style="margin: 20px 0 10px 20px; font-size:0.7rem; color:#57534e; text-transform:uppercase;">Social</div>
-                <button onclick="window.actions.navigate('tavern')" class="nav-btn"><i data-lucide="message-circle"></i> Tavern</button>
-                <button onclick="window.actions.navigate('courier')" class="nav-btn"><i data-lucide="mail"></i> Courier Pigeon</button>
+                <button onclick="window.actions.navigate('tavern')" class="nav-btn"><i data-lucide="message-circle"> </i> Tavern</button>
+                <button onclick="window.actions.navigate('courier')" class="nav-btn"><i data-lucide="mail"> </i> Courier Pigeon</button>
                 <div style="margin: 20px 0 10px 20px; font-size:0.7rem; color:#57534e; text-transform:uppercase;">Settings</div>
                 <button onclick="window.actions.toggleMusic()" class="nav-btn"><i data-lucide="${AudioController.musicOn ? 'volume-2' : 'volume-x'}"></i> ${AudioController.musicOn ? 'Music: ON' : 'Music: OFF'}</button>
                 <div style="margin: 20px; border-top: 1px solid #292524;"></div>
