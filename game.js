@@ -798,17 +798,22 @@ function render() {
                 <button onclick="window.actions.logout()" class="nav-btn" style="color: #ef4444;"><i data-lucide="log-out"></i> Depart</button>
             </nav>
         </div>
-        <div class="main-content" style="${bgStyle}">
-            <div class="top-bar">
-                <div class="stat-tag hp"><i data-lucide="heart" width="14" style="margin-right:5px"></i> ${player.hp}</div>
-                <div class="stat-tag en"><i data-lucide="zap" width="14" style="margin-right:5px"></i> ${player.energy}</div>
-                <div class="stat-tag gold"><span style="margin-right:5px">●</span> ${player.gold}</div>
-                <div class="stat-tag">Lvl ${player.level}</div>
-            </div>
-            <div class="scroll-area">${contentHtml}</div>
-            <div class="log-box" style="height: 100px; flex-shrink: 0; border-top: 1px solid var(--border-strong);">${state.logs.map(l => `<div class="log-entry">> ${l}</div>`).join('')}</div>
+<div class="app-container">
+    <div class="sidebar">
         </div>
-    </div>`;
+    <div class="main-content" style="${bgStyle}">
+        <div class="top-bar">
+            <div class="stat-tag hp"><i data-lucide="heart" width="14" style="margin-right:5px"></i> ${player.hp}</div>
+            
+            <div class="stat-tag en"><i data-lucide="zap" width="14" style="margin-right:5px"></i> ${player.energy} / ${player.maxEnergy}</div>
+            
+            <div class="stat-tag gold"><span style="margin-right:5px">●</span> ${player.gold}</div>
+            <div class="stat-tag">Lvl ${player.level}</div>
+        </div>
+        <div class="scroll-area">${contentHtml}</div>
+        <div class="log-box" style="height: 100px; flex-shrink: 0; border-top: 1px solid var(--border-strong);">${state.logs.map(l => `<div class="log-entry">> ${l}</div>`).join('')}</div>
+    </div>
+</div>`;
 
     if(window.lucide) window.lucide.createIcons();
 }
